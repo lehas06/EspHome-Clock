@@ -1,0 +1,114 @@
+esphome:
+  name: kitchen
+  platform: ESP8266
+  board: d1_mini
+
+
+wifi:
+  ssid: ""
+  password: ""
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: ""
+    password: ""
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  password: ""
+
+ota:
+  password: ""
+
+dallas:
+  - pin: D7
+    update_interval: 10s
+  
+binary_sensor:
+  - platform: gpio
+    pin: 
+      number: D2
+      inverted: true
+      mode: INPUT_PULLUP
+    filters:
+      - delayed_on_off: 100ms
+    name: "Button"
+    id: button
+    on_press:
+      then:
+        - lambda: |-
+            if (id(select).state < 5) {
+             id(select).state += 1;
+            } else {
+             id(select).state = 1;
+            }
+
+sensor:
+  - platform: dht
+    pin: D1
+    temperature:
+      name: "Kitchen Temperature"
+      id: Ktemp
+      filters:
+      - offset: -2.0
+    humidity:
+      name: "Kitchen Humidity"
+      id: KHumid
+    update_interval: 10s
+
+  - platform: dallas
+    address: 0x740315A190B8FF28
+    name: "Outdoor Temperature"
+    id: outtemp
+  
+  - platform: homeassistant
+    entity_id: sensor.kitchen_sel
+    id: select
+  
+spi:
+  clk_pin: D0
+  mosi_pin: D6
+
+display:
+  - platform: max7219digit
+    cs_pin: D5
+    num_chips: 4
+    intensity: 5
+    lambda: |-
+      if  (id(select).state ==1) {
+        it.strftime(0, 0, id(digit_font), "%H:%M", id(hass_time).now());
+      }
+      if (id(select).state ==2){
+        it.printf(0, 0, id(digit_font), "%3.1f", id(outtemp).state);
+        it.image(24, 0, id(im_t_out));
+      }
+      if (id(select).state ==3){
+        it.printf(0, 0, id(digit_font), "%3.1f", id(Ktemp).state);
+        it.image(24, 0, id(im_t_in));
+      }
+      if (id(select).state ==4){
+        it.printf(0, 0, id(digit_font), "%3.1f", id(KHumid).state);
+        it.image(24, 0, id(im_hum));
+      }
+
+
+font:
+  - file: "pixel.ttf"
+    id: digit_font
+    size: 14
+
+time:
+  - platform: homeassistant
+    id: hass_time
+
+image:
+  - file: "t_in.png"
+    id: im_t_in
+  - file: "t_out.png"
+    id: im_t_out    
+  - file: "hum.png"
+    id: im_hum    
+   
