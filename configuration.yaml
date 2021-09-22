@@ -1,0 +1,24 @@
+input_select:
+  scene_kitchen:
+    name: Kitchen_time
+    options:
+      - time
+      - outdoor
+      - indoor
+      - humidity
+      - "OFF"
+    initial: "time"
+
+template:
+  - sensor:
+      - name: kitchen_sel
+        state: >
+            {% if is_state('input_select.scene_kitchen', 'time') %}
+              1
+            {% elif is_state('input_select.scene_kitchen', 'outdoor') %}
+              2
+            {% elif is_state('input_select.scene_kitchen', 'indoor') %}
+              3
+            {% elif is_state('input_select.scene_kitchen', 'humidity') %}
+              4
+            {% endif %}
